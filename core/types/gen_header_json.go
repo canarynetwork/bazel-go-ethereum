@@ -16,6 +16,7 @@ var _ = (*headerMarshaling)(nil)
 // MarshalJSON marshals as JSON.
 func (h Header) MarshalJSON() ([]byte, error) {
 	type Header struct {
+		GivenHash   *common.Hash   `json:"hash" rlp:"-"`
 		ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
 		UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
 		Coinbase    common.Address `json:"miner"            gencodec:"required"`
@@ -32,9 +33,9 @@ func (h Header) MarshalJSON() ([]byte, error) {
 		MixDigest   common.Hash    `json:"mixHash"`
 		Nonce       BlockNonce     `json:"nonce"`
 		BaseFee     *hexutil.Big   `json:"baseFeePerGas" rlp:"optional"`
-		Hash        common.Hash    `json:"hash"`
 	}
 	var enc Header
+	enc.GivenHash = h.GivenHash
 	enc.ParentHash = h.ParentHash
 	enc.UncleHash = h.UncleHash
 	enc.Coinbase = h.Coinbase
@@ -51,13 +52,13 @@ func (h Header) MarshalJSON() ([]byte, error) {
 	enc.MixDigest = h.MixDigest
 	enc.Nonce = h.Nonce
 	enc.BaseFee = (*hexutil.Big)(h.BaseFee)
-	enc.Hash = h.Hash()
 	return json.Marshal(&enc)
 }
 
 // UnmarshalJSON unmarshals from JSON.
 func (h *Header) UnmarshalJSON(input []byte) error {
 	type Header struct {
+		GivenHash   *common.Hash    `json:"hash" rlp:"-"`
 		ParentHash  *common.Hash    `json:"parentHash"       gencodec:"required"`
 		UncleHash   *common.Hash    `json:"sha3Uncles"       gencodec:"required"`
 		Coinbase    *common.Address `json:"miner"            gencodec:"required"`
@@ -78,6 +79,9 @@ func (h *Header) UnmarshalJSON(input []byte) error {
 	var dec Header
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
+	}
+	if dec.GivenHash != nil {
+		h.GivenHash = dec.GivenHash
 	}
 	if dec.ParentHash == nil {
 		return errors.New("missing required field 'parentHash' for Header")
